@@ -1,4 +1,4 @@
-#BankingApplication
+## BankingApplication
 
 The server side of the banking application with a REST API.
 
@@ -49,3 +49,8 @@ The server side of the banking application with a REST API.
 ## Development Plans
 - Docker Containerization
 - Unit and integration tests
+
+## Author/Contacts
+github: https://github.com/Valep-Vinreo-sys
+Email: pasha.orevin@gmail.com
+Telegram: [@FlameNiv] https://t.me/FlameNiv
