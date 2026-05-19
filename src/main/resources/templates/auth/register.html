@@ -1,7 +1,21 @@
 <!DOCTYPE html>
+<!--
+    New user registration page.
+    URL: /register
+    Functionality:
+        - Data collection: first name, last name, email, password
+        - Validation: Password match check, password length (min. 6 characters)
+        - Sending POST to /api/auth/register
+        - On success: redirect to /login
+        - On error: display a notification via toast
+
+    Related components:
+        - RegisterRequest (DTO on the backend)
+        - AuthController.registerUser()
+-->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Регистрация - MyBank</title>
+    <title>Registration - MyBank</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14'>🏦</text></svg>">
@@ -34,19 +48,19 @@
         <div class="col-md-6 col-lg-5">
             <div class="card shadow">
                 <div class="card-header bg-success text-white text-center py-3">
-                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Регистрация</h4>
+                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Registration</h4>
                 </div>
                 <div class="card-body p-4">
                     <form id="registerForm">
                         <div class="mb-3">
-                            <label for="firstName" class="form-label">Имя</label>
+                            <label for="firstName" class="form-label">Name</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-user"></i></span>
                                 <input type="text" class="form-control" id="firstName" name="firstName" required>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="lastName" class="form-label">Фамилия</label>
+                            <label for="lastName" class="form-label">Second name</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-user"></i></span>
                                 <input type="text" class="form-control" id="lastName" name="lastName" required>
@@ -60,23 +74,23 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label">Пароль</label>
+                            <label for="password" class="form-label">password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </div>
-                            <div class="form-text">Пароль должен содержать минимум 6 символов</div>
+                            <div class="form-text">password should contain minimum 6 simbols</div>
                         </div>
                         <div class="mb-3">
-                            <label for="confirmPassword" class="form-label">Подтверждение пароля</label>
+                            <label for="confirmPassword" class="form-label">Password confirmation</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                 <input type="password" class="form-control" id="confirmPassword" required>
                             </div>
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">Зарегистрироваться</button>
-                            <a href="/login" class="btn btn-outline-secondary">Уже есть аккаунт? Войти</a>
+                            <button type="submit" class="btn btn-success btn-lg">Register</button>
+                            <a href="/login" class="btn btn-outline-secondary">Already have account? Login!</a>
                         </div>
                     </form>
                 </div>
@@ -93,6 +107,9 @@
 
 <script>
     // Toast notification function
+    /**
+    * Shows a notification. Type: 'success' (green), 'error' (red), 'info' (blue)
+    */
     function showToast(message, type = 'success') {
         const toastContainer = document.querySelector('.toast-container');
         if (!toastContainer) return;
@@ -128,12 +145,12 @@
         const confirmPassword = document.getElementById('confirmPassword').value;
 
         if (password !== confirmPassword) {
-            showToast('Пароли не совпадают', 'error');
+            showToast('Password not match', 'error');
             return;
         }
 
         if (password.length < 6) {
-            showToast('Пароль должен содержать минимум 6 символов', 'error');
+            showToast('Password should contain minimum 6 simbols', 'error');
             return;
         }
 
@@ -154,17 +171,17 @@
             });
 
             if (response.ok) {
-                showToast('Регистрация успешна! Теперь войдите в систему.', 'success');
+                showToast('Registration successfull! Now login into system.', 'success');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
             } else {
                 const error = await response.text();
-                showToast('Ошибка регистрации: ' + error, 'error');
+                showToast('Registration error: ' + error, 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            showToast('Ошибка соединения с сервером. Убедитесь, что сервер запущен.', 'error');
+            showToast('Error connecting to the server. Check if server launched.', 'error');
         }
     });
 </script>
