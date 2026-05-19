@@ -1,15 +1,51 @@
 version: '3.8'
+
 services:
-  postgres:
-    image: postgres:15
-    container_name: bank_db
-    environment:
-      POSTGRES_DB: bankdb
-      POSTGRES_USER: bankuser
-      POSTGRES_PASSWORD: secret
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+# PostgreSQL database
+postgres:
+image: postgres:15-alpine # Lightweight PostgreSQL image
+container_name: bank_postgres # Container name (useful for referencing)
+environment:
+POSTGRES_DB: bankdb # Database name
+POSTGRES_USER: bankuser # User
+POSTGRES_PASSWORD: bankpass # Password
+ports:
+- "5432:5432" # Port forwarding (host:container)
 volumes:
-  postgres_data:
+- postgres_data:/var/lib/postgresql/data # Persistent volume for data
+- ./init.sql:/docker-entrypoint-initdb.d/init.sql # (optional) initialization script
+healthcheck:
+test: ["CMD-SHELL", "pg_isready -U bankuser -d" bankdb"] 
+interval: 10s 
+timeout: 5s 
+retries: 5 
+networks: 
+-bank-network 
+
+# Spring Boot application 
+app: 
+build: . # Build the image from the Dockerfile in the current folder
+container_name: bank_app
+depends_on:
+postgres:
+condition: service_healthy # Wait for the DB to be ready (healthcheck)
+ports:
+- "8080:8080" # Forward the application port
+environment:
+SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bankdb # Important: service name 'postgres' as host
+SPRING_DATASOURCE_USERNAME: bankuser
+SPRING_DATASOURCE_PASSWORD: bankpass
+SPRING_JPA_HIBERNATE_DDL_AUTO: validate # Doesn't create tables, waiting for migration
+SPRING_FLYWAY_ENABLED: "true"
+SPRING_PROFILES_ACTIVE: docker # (Optional) profile for Docker
+networks:
+- bank-network
+
+# Network bridge for container communication
+networks:
+bank-network:
+driver: bridge
+
+# Volumes for storing database data
+volumes:
+postgres_data:
