@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Мои счета - MyBank</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14'>🏦</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="/dashboard">MyBank</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="/dashboard">Главная</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/accounts">Счета</a></li>
+        <li class="nav-item"><a class="nav-link" href="/transfer">Перевод</a></li>
+        <li class="nav-item"><a class="nav-link" href="/transactions">История</a></li>
+        <li class="nav-item"><a class="nav-link" href="/logout">Выход</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-credit-card me-2"></i>Мои счета</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAccountModal">
+      <i class="fas fa-plus me-2"></i>Открыть счет
+    </button>
+  </div>
+
+  <div id="accountsContainer" class="row">
+    <div class="col-12 text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Загрузка...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Account Modal -->
+<div class="modal fade" id="createAccountModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Открыть новый счет</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createAccountForm">
+          <div class="mb-3">
+            <label class="form-label">Тип счета</label>
+            <select class="form-select" id="accountType">
+              <option value="CHECKING">Текущий счет</option>
+              <option value="SAVINGS">Сберегательный счет</option>
+              <option value="BUSINESS">Бизнес счет</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Валюта</label>
+            <select class="form-select" id="currency">
+              <option value="RUB">RUB</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="createAccount()">Открыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function showToast(message, type) {
+      alert(message); // Простая замена на alert
+  }
+
+  async function loadAccounts() {
+      try {
+          const response = await fetch('/api/accounts');
+          if (response.status === 401 || response.status === 403) {
+              window.location.href = '/login';
+              return;
+          }
+          if (response.ok) {
+              const accounts = await response.json();
+              const container = document.getElementById('accountsContainer');
+              if (accounts.length === 0) {
+                  container.innerHTML = '<div class="alert alert-info">У вас пока нет счетов</div>';
+                  return;
+              }
+              container.innerHTML = accounts.map(account => `
+                  <div class="col-md-6 mb-3">
+                      <div class="card h-100 shadow-sm">
+                          <div class="card-header bg-primary text-white">
+                              <i class="fas ${account.type === 'CHECKING' ? 'fa-credit-card' : (account.type === 'SAVINGS' ? 'fa-piggy-bank' : 'fa-briefcase')} me-2"></i>
+                              ${account.type === 'CHECKING' ? 'Текущий' : (account.type === 'SAVINGS' ? 'Сберегательный' : 'Бизнес')}
+                          </div>
+                          <div class="card-body">
+                              <h6 class="text-muted">Номер счета</h6>
+                              <p><code>${account.accountNumber}</code></p>
+                              <h6 class="text-muted">Баланс</h6>
+                              <h3 class="${parseFloat(account.balance) >= 0 ? 'text-success' : 'text-danger'}">
+                                  ${parseFloat(account.balance).toLocaleString()} ${account.currency}
+                              </h3>
+                              <small class="text-muted">Открыт: ${new Date(account.createdAt).toLocaleDateString()}</small>
+                          </div>
+                      </div>
+                  </div>
+              `).join('');
+          }
+      } catch (error) {
+          console.error('Error:', error);
+          document.getElementById('accountsContainer').innerHTML = '<div class="alert alert-danger">Ошибка загрузки счетов</div>';
+      }
+  }
+
+  async function createAccount() {
+      const type = document.getElementById('accountType').value;
+      const currency = document.getElementById('currency').value;
+
+      try {
+          const response = await fetch('/api/accounts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type, currency })
+          });
+          if (response.ok) {
+              alert('Счет успешно открыт!');
+              const modal = bootstrap.Modal.getInstance(document.getElementById('createAccountModal'));
+              modal.hide();
+              loadAccounts();
+          } else {
+              alert('Ошибка открытия счета');
+          }
+      } catch (error) {
+          alert('Ошибка соединения');
+      }
+  }
+
+  loadAccounts();
+</script>
+</body>
+</html>

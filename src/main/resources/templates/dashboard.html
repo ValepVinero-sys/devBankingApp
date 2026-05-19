@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Личный кабинет - MyBank</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="/dashboard">MyBank</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link active" href="/dashboard">Главная</a></li>
+        <li class="nav-item"><a class="nav-link" href="/accounts">Счета</a></li>
+        <li class="nav-item"><a class="nav-link" href="/transfer">Перевод</a></li>
+        <li class="nav-item"><a class="nav-link" href="/transactions">История</a></li>
+        <li class="nav-item"><a class="nav-link" href="/logout">Выход</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="alert alert-success">
+    <h4><i class="fas fa-user-check me-2"></i>Добро пожаловать в личный кабинет!</h4>
+    <p>Вы успешно вошли в систему.</p>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-md-4 mb-3">
+      <div class="card text-center h-100 shadow-sm">
+        <div class="card-body">
+          <i class="fas fa-credit-card fa-3x text-primary mb-3"></i>
+          <h5 class="card-title">Мои счета</h5>
+          <p class="card-text">Просмотр баланса и управление счетами</p>
+          <a href="/accounts" class="btn btn-primary">Перейти</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card text-center h-100 shadow-sm">
+        <div class="card-body">
+          <i class="fas fa-exchange-alt fa-3x text-success mb-3"></i>
+          <h5 class="card-title">Перевод средств</h5>
+          <p class="card-text">Быстрые переводы между счетами</p>
+          <a href="/transfer" class="btn btn-success">Перейти</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card text-center h-100 shadow-sm">
+        <div class="card-body">
+          <i class="fas fa-history fa-3x text-info mb-3"></i>
+          <h5 class="card-title">История операций</h5>
+          <p class="card-text">Отслеживайте все транзакции</p>
+          <a href="/transactions" class="btn btn-info">Перейти</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
