@@ -29,7 +29,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // Пропускаем запросы к страницам и API аутентификации
         String path = request.getServletPath();
         if (path.equals("/") || path.equals("/login") || path.equals("/register") ||
                 path.equals("/dashboard") || path.startsWith("/css") || path.startsWith("/js") ||
