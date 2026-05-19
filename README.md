@@ -1,34 +1,34 @@
-# Banking Application
+#BankingApplication
 
-Серверная часть банковского приложения с REST API.
+The server side of the banking application with a REST API.
 
-## Технологии
+## Technologies
 - Java 17
 - Spring Boot 4.0.4
 - Spring Data JPA / Hibernate
-- Spring Security (сессионная аутентификация)
+- Spring Security (session authentication)
 - PostgreSQL
 - Thymeleaf / Bootstrap
 - Maven
 
-## Функционал
-- Регистрация и вход пользователей
-- Создание банковских счетов (текущий, сберегательный, бизнес)
-- Перевод средств между счетами
-- История транзакций с фильтрацией
-- Личный кабинет пользователя
+## Features
+- User registration and login
+- Creating bank accounts (current, savings, business)
+- Transferring funds between accounts
+- Transaction history with filtering
+- User account
 
-## Запуск проекта
-1. Установите PostgreSQL и создайте базу данных `bankdb`
-2. Настройте подключение в `application.yml`
-3. Запустите: `mvn spring-boot:run`
-4. Откройте: `http://localhost:8080`
+## Project Launch
+1. Install PostgreSQL and create the `bankdb` database
+2. Configure the connection in `application.yml`
+3. Run: `mvn spring-boot:run`
+4. Open: `http://localhost:8080`
 
-## Скриншоты
-[Добавьте скриншоты интерфейса]
+## Screenshots
+[Add UI screenshots]
 
-## Планы по развитию
-- Добавление JWT аутентификации
-- Разделение на микросервисы с Kafka
-- Docker контейнеризация
-- Unit и интеграционные тесты
+## Development Plans
+- Adding JWT authentication
+- Splitting into microservices with Kafka
+- Docker Containerization
+- Unit and integration tests
