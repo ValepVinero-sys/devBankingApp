@@ -14,12 +14,12 @@ import java.util.Random;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Transfer service test")
-class TransferServiceTest {
+class TransferServiceSimpleTest {
 
     @Mock private com.Bank.AccountRepository accountRepository;
     @Mock private com.Bank.TransactionRepository transactionRepository;
@@ -30,13 +30,6 @@ class TransferServiceTest {
 
     @BeforeEach
     void setup(){
-        Random random = new Random();
-        Long randonLongIDFM = random.nextLong();
-        Long randonLongIDT = random.nextLong();
-        from = new Account();
-        to = new Account();
-        from.setId(randonLongIDFM);
-        to.setId(randonLongIDT);
         request = new TransferRequest();
         request.setFromAccountNumber("22222222222222222222");
         request.setToAccountNumber("11111111111111111111");
@@ -47,6 +40,14 @@ class TransferServiceTest {
     @Test
     @DisplayName("funds transfer success test")
     void transferMoneySuccess(){
+
+        Random random = new Random();
+        Long randonLongIDFM = random.nextLong();
+        Long randonLongIDT = random.nextLong();
+        from = new Account();
+        to = new Account();
+        from.setId(randonLongIDFM);
+        to.setId(randonLongIDT);
 
         from.setBalance(BigDecimal.valueOf(300));
         to.setBalance(BigDecimal.valueOf(0));
@@ -63,34 +64,32 @@ class TransferServiceTest {
     @Test
     void Transfer_Not_Enough_Funds(){
 
+        Random random = new Random();
+        Long randonLongIDFM = random.nextLong();
+        Long randonLongIDT = random.nextLong();
+        from = new Account();
+        to = new Account();
+        from.setId(randonLongIDFM);
+        to.setId(randonLongIDT);
+
         from.setBalance(BigDecimal.valueOf(100));
         to.setBalance(BigDecimal.valueOf(0));
 
         when(accountRepository.findForUpdate("22222222222222222222")).thenReturn(Optional.of(from));
         when(accountRepository.findForUpdate("11111111111111111111")).thenReturn(Optional.of(to));
 
-        TransactionResponse response = transferService.transferMoney(request);
-
-        assertThat(response.getStatus()).isEqualTo("FAILED");
-        verify(accountRepository, times(1)).save(from);
-        verify(accountRepository, times(1)).save(to);
-
+        assertThatThrownBy(() -> transferService.transferMoney(request))
+                .isInstanceOf(InsufficientFundsException.class);
     }
+    //Failed test due to short time
     @Test
-    void Transfer_Not_Found_ACC(){
+    void Transfer_Not_Found_ACC_Sender(){
+        when(accountRepository.findForUpdate("11111111111111111111"))
+                .thenReturn(Optional.empty());
 
-        from.setBalance(BigDecimal.valueOf(200));
-        to.setBalance(BigDecimal.valueOf(0));
-
-        when(accountRepository.findForUpdate("22222222222222222220")).thenReturn(Optional.of(from));
-        when(accountRepository.findForUpdate("11111111111111111112")).thenReturn(Optional.of(to));
-
-        TransactionResponse response = transferService.transferMoney(request);
-
-        assertThat(response.getStatus()).isEqualTo("FAILED");
-        verify(accountRepository, times(1)).save(from);
-        verify(accountRepository, times(1)).save(to);
-
+        assertThatThrownBy(() -> transferService.transferMoney(request))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Sender account not found");
     }
     @Test
     void Transfer_TOO_SAME_ACC(){
@@ -103,12 +102,22 @@ class TransferServiceTest {
         when(accountRepository.findForUpdate("22222222222222222222")).thenReturn(Optional.of(from));
         when(accountRepository.findForUpdate("22222222222222222222")).thenReturn(Optional.of(to));
 
-        TransactionResponse response = transferService.transferMoney(request);
+        assertThatThrownBy(() -> transferService.transferMoney(request)).isInstanceOf(IllegalArgumentException.class);
 
-        assertThat(response.getStatus()).isEqualTo("FAILED");
-        verify(accountRepository, times(1)).save(from);
-        verify(accountRepository, times(1)).save(to);
+    }
+    //Failed test due to short time
+    @Test
+    void transfer_NotFound_ReceiverAccount() {
 
+        when(accountRepository.findForUpdate("11111111111111111111"))
+                .thenReturn(Optional.of(from));
+        when(accountRepository.findForUpdate("22222222222222222222"))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> transferService.transferMoney(request))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Recipient account not found");
     }
 
 }
