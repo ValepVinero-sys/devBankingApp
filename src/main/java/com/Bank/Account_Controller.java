@@ -1,117 +1,118 @@
 package com.Bank;
 
-import com.Bank.RegisterRequest;
-import com.Bank.User;
-import com.Bank.UserRepository;
-import com.Bank.JwUtils;
+import com.Bank.TransferRequest;
+import com.Bank.AccountResponse;
+import com.Bank.TransactionResponse;
+import com.Bank.AccountService;
+import com.Bank.TransferService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.util.List;
 
-/**
- * REST controller for user authentication and registration.
+/** Rest controller for controlling Account.
+ * <p>
+ *    Is api for account service's.
+ * </p>
  *
+ * @see TransferController
  * @author Valep Vinreo
- * @version 1.0
+ * @version 1.00
  * @since 04-2026
+ *
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/accounts")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "API for user login and registration")
-public class AuthController {
+public class Account_Controller {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwUtils jwtUtils;
-    private final AuthenticationManager authenticationManager;
-    /**Registration of new user.
+    private final AccountService accountService;
+    private final TransferService transferService;
+
+    /** Creating account by request from AccountService.
      *
-     * @param registerRequest Data for registration
-     * @return Message with result of registration request(Often successfully).
+     *
+     * @param request Object with data for creating account(cannot be null).
+     * @return new {@link ResponseEntity} with object {@link AccountResponse},{@link HttpStatus}
      */
-    @PostMapping("/register")
-    @Operation(
-            summary = "Registration of new user",
-            description = "Create new user at the system"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Registration successfully",
-                    content = @Content(examples = @ExampleObject(value = """
-                {
-                  "message": "User successfully registered",
-                  "email": "user@example.com"
-                }
-                """))),
-            @ApiResponse(responseCode = "400", description = "Validation error"),
-            @ApiResponse(responseCode = "409", description = "User already exist")
-    })
-    public ResponseEntity<Map<String, String>> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "User with email " + registerRequest.getEmail() + " already registered");
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-        }
+    @PostMapping
+    public ResponseEntity<AccountResponse> createAccount(@Valid @RequestBody AccountService.CreateAccountRequest request) {
+        AccountResponse response = accountService.createAccount(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
 
-        User user = new User();
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setFirstName(registerRequest.getFirstName());
-        user.setLastName(registerRequest.getLastName());
-        user.setCreatedAt(LocalDateTime.now());
+    /** Getter for all accounts linked to the User
+     *
+     * @return {@link ResponseEntity} with {@link List} object's {@link AccountResponse}
+     */
+    @GetMapping
+    public ResponseEntity<List<AccountResponse>> getUserAccounts() {
+        List<AccountResponse> accounts = accountService.getUserAccounts();
+        return ResponseEntity.ok(accounts);
+    }
 
-        userRepository.save(user);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "User successfully registered");
-        response.put("email", user.getEmail());
-
+    /** Return account by entered account number.
+     *
+     * @param accountNumber unique autogenerated 20-digit number.
+     * @see Account
+     * @return {@link ResponseEntity} with object {@link AccountResponse}
+     */
+    @GetMapping("/{accountNumber}")
+    public ResponseEntity<AccountResponse> getAccount(@PathVariable String accountNumber) {
+        AccountResponse response = accountService.getAccountByNumber(accountNumber);
         return ResponseEntity.ok(response);
     }
-    /**
-     * User Login in system.
+
+    /** Return account balance through account number.
      *
-     * @param loginRequest User's data
-     * @return JWT token  for authentication
+     * @param accountNumber unique autogenerated 20-digit number.
+     * @return {@link ResponseEntity} & {@link AccountResponse}
      */
-    @PostMapping("/login")
-    @Operation(
-            summary = "Login in system",
-            description = "Authentication of user & return JWT token"
-    )
+    @GetMapping("/{accountNumber}/balance")
+    public ResponseEntity<BigDecimal> getBalance(@PathVariable String accountNumber) {
+        AccountResponse account = accountService.getAccountByNumber(accountNumber);
+        return ResponseEntity.ok(account.getBalance());
+    }
+
+    /**
+     * Closes a bank account (available to administrators and the account owner).
+     * <p>
+     * <b>Closing conditions:</b>
+     * <ul>
+     * <li>Account balance must be 0</li>
+     * <li>No pending transactions</li>
+     * <li>Account must not already be closed</li>
+     * </ul>
+     * </p>
+     *
+     * @param accountNumber account number to close
+     * @return an empty response with code 204 (No Content)
+     * <p>
+     *  204 - Account successfully closed
+     *  400 - Unable to close account (non-zero balance or active transactions)
+     *  401 - User not authenticated
+     *  403 - Not authorized to close account
+     *  404 - Account not found
+     */
+    @DeleteMapping("/{accountNumber}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @Operation(summary = "Close account", description = "Closes a bank account (balance must be 0)")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully login"),
-            @ApiResponse(responseCode = "401", description = "Wrong email or password")
+            @ApiResponse(responseCode = "204", description = "Account closed successfully"),
+            @ApiResponse(responseCode = "400", description = "Unable to close account (balance not 0 or active transactions)"),
+            @ApiResponse(responseCode = "403", description = "No permission to close this account"),
+            @ApiResponse(responseCode = "404", description = "Account not found")
     })
-    public ResponseEntity<JwtResponse> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(),
-                        loginRequest.getPassword()
-                )
-        );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
-        return ResponseEntity.ok(new JwtResponse(jwt));
+    public ResponseEntity<Void> closeAccount(@PathVariable String accountNumber) {
+        accountService.closeAccount(accountNumber);
+        return ResponseEntity.noContent().build();
     }
 }
