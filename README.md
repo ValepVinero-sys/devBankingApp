@@ -55,3 +55,4 @@ The server side of the banking application with a REST API.
 - github: https://github.com/Valep-Vinreo-sys
 - Email: pasha.orevin@gmail.com
 - Telegram: [@FlameNiv] https://t.me/FlameNiv
+- Linkedin: https://www.linkedin.com/in/%D0%BF%D0%B0%D0%B2%D0%B5%D0%BB-%D0%BE%D1%80%D0%B5%D0%B2%D0%B8%D0%BD-6ab99b414/
