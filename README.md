@@ -50,6 +50,9 @@ The server side of the banking application with a REST API.
 - Docker Containerization
 - Unit and integration tests
 - Code refactoring and optimization (concurrency issues, advanced validation)
+- Implement Multi-Currency Support (JSR 354, currency conversion via external REST API, and Spring Cache for exchange rates)
+- Migrate from Thymeleaf SSR to a decoupled architecture: turn controllers into a stateless REST API with JWT authentication
+- Implement Role-Based Access Control (RBAC): introduce USER/ADMIN roles, set up Method Security (@PreAuthorize), and enforce data ownership checks
 
 ## Author/Contacts
 - github: https://github.com/Valep-Vinreo-sys
