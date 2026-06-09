@@ -49,6 +49,7 @@ The server side of the banking application with a REST API.
 ## Development Plans
 - Docker Containerization
 - Unit and integration tests
+- Code refactoring and optimization (concurrency issues, advanced validation)
 
 ## Author/Contacts
 - github: https://github.com/Valep-Vinreo-sys
