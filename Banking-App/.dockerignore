@@ -1,0 +1,23 @@
+# Игнорируем системные файлы
+.git
+.gitignore
+README.md
+
+# Игнорируем временные и сборочные директории
+target/
+*.log
+*.tmp
+
+# Игнорируем IDE
+.idea/
+*.iml
+.vscode/
+
+# Игнорируем Docker файлы (чтобы не копировать их внутрь образа)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Игнорируем тесты и документацию
+src/test/
+*.md

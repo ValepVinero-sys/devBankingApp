@@ -1,7 +1,15 @@
 <!DOCTYPE html>
+<!--
+    Login page.
+    Functionality:
+    - Enter email and password
+    - Send POST to /api/auth/login
+    - Upon success: save JWT token in localStorage, redirect to /dashboard
+    - Upon error (401): display "Invalid email or password" notification
+-->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Вход в систему - MyBank</title>
+    <title>Login - MyBank</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14'>🏦</text></svg>">
@@ -10,6 +18,7 @@
     <style>
         body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
         .card { border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 1050; }
     </style>
 </head>
 <body>
@@ -19,27 +28,27 @@
         <div class="col-md-6 col-lg-5">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Вход в MyBank</h4>
+                    <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Login to MyBank</h4>
                 </div>
                 <div class="card-body p-4">
-                    <form th:action="@{/login}" method="post">
+                    <form id="loginForm">
                         <div class="mb-3">
-                            <label for="username" class="form-label">Email</label>
+                            <label for="email" class="form-label">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                <input type="email" class="form-control" id="username" name="username" required>
+                                <input type="email" class="form-control" id="email" name="email" required>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label">Пароль</label>
+                            <label for="password" class="form-label">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </div>
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">Войти</button>
-                            <a href="/register" class="btn btn-outline-secondary">Нет аккаунта? Зарегистрироваться</a>
+                            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                            <a href="/register" class="btn btn-outline-secondary">Don't have an account? Register</a>
                         </div>
                     </form>
                 </div>
@@ -48,6 +57,63 @@
     </div>
 </div>
 
+<!-- Toast container for notifications -->
+<div class="toast-container"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Helper: show toast notification
+    function showToast(message, type = 'success') {
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) return;
+        const toastId = 'toast-' + Date.now();
+        const bgClass = type === 'success' ? 'bg-success' : (type === 'error' ? 'bg-danger' : 'bg-info');
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+        toast.show();
+        toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
+    }
+
+    // Handle login form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.token) {
+                // Save token and user email
+                localStorage.setItem('jwtToken', data.token);
+                localStorage.setItem('userEmail', email);
+                showToast('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            } else {
+                showToast('Invalid email or password', 'error');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            showToast('Connection error. Make sure the server is running.', 'error');
+        }
+    });
+</script>
 </body>
 </html>

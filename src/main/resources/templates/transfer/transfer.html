@@ -1,7 +1,20 @@
 <!DOCTYPE html>
+<!--
+Page: Transfer funds between bank accounts
+URL: /transfer
+Access: Authenticated users only
+
+Functionality:
+- Select the account to be debited from (from the list of active accounts)
+- Enter the recipient's account number
+- Specify the payment amount and purpose
+- Send POST to /api/accounts/transfer
+- Display a notification about the result (success/error)
+- Navigate via the navbar
+-->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>Перевод средств - MyBank</title>
+  <title>Funds transfer - MyBank</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14'>🏦</text></svg>">
@@ -18,11 +31,11 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="/dashboard">Главная</a></li>
-        <li class="nav-item"><a class="nav-link" href="/accounts">Счета</a></li>
-        <li class="nav-item"><a class="nav-link active" href="/transfer">Перевод</a></li>
-        <li class="nav-item"><a class="nav-link" href="/transactions">История</a></li>
-        <li class="nav-item"><a class="nav-link" href="/logout">Выход</a></li>
+        <li class="nav-item"><a class="nav-link" href="/dashboard">Home</a></li>
+        <li class="nav-item"><a class="nav-link" href="/accounts">Accounts</a></li>
+        <li class="nav-item"><a class="nav-link active" href="/transfer">Translation</a></li>
+        <li class="nav-item"><a class="nav-link" href="/transactions">History</a></li>
+        <li class="nav-item"><a class="nav-link" href="/logout">Exit</a></li>
       </ul>
     </div>
   </div>
@@ -33,29 +46,29 @@
     <div class="col-md-6">
       <div class="card shadow">
         <div class="card-header bg-primary text-white text-center">
-          <h4><i class="fas fa-exchange-alt me-2"></i>Перевод средств</h4>
+          <h4><i class="fas fa-exchange-alt me-2"></i>Transfer funds</h4>
         </div>
         <div class="card-body">
           <form id="transferForm">
             <div class="mb-3">
-              <label class="form-label">Счет списания</label>
+              <label class="form-label">Debit account</label>
               <select class="form-select" id="fromAccount" required>
-                <option value="">Загрузка...</option>
+                <option value="">Loading...</option>
               </select>
             </div>
             <div class="mb-3">
-              <label class="form-label">Счет получателя</label>
+              <label class="form-label">Recipient's account</label>
               <input type="text" class="form-control" id="toAccountNumber" required>
             </div>
             <div class="mb-3">
-              <label class="form-label">Сумма</label>
+              <label class="form-label">Amount</label>
               <input type="number" step="0.01" class="form-control" id="amount" required>
             </div>
             <div class="mb-3">
-              <label class="form-label">Назначение</label>
+              <label class="form-label">Purpose</label>
               <textarea class="form-control" id="description" rows="2"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Перевести</button>
+            <button type="submit" class="btn btn-primary w-100">Transfer</button>
           </form>
         </div>
       </div>
@@ -65,56 +78,87 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+  /**
+ * Load list of bank accounts of current user from server
+ * & show them on page.
+ *
+ * @async
+ * @returns {Promise<void>}
+ *
+ * @throws {Error} If request are not authorized (redirect to /login)
+ *
+ * @example
+ * await loadAccounts();
+ */
   async function loadAccounts() {
-      try {
-          const response = await fetch('/api/accounts');
-          if (response.status === 401 || response.status === 403) {
-              window.location.href = '/login';
-              return;
-          }
-          if (response.ok) {
-              const accounts = await response.json();
-              const select = document.getElementById('fromAccount');
-              select.innerHTML = '<option value="">Выберите счет...</option>';
-              accounts.forEach(account => {
-                  if (account.active && parseFloat(account.balance) > 0) {
-                      select.innerHTML += `<option value="${account.accountNumber}">${account.accountNumber} - ${account.balance} ${account.currency}</option>`;
-                  }
-              });
-          }
-      } catch (error) {
-          console.error('Error:', error);
-      }
-  }
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+    try {
+        const response = await fetch('/api/accounts', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('jwtToken');
+            window.location.href = '/login';
+            return;
+        }
+        if (response.ok) {
+            const accounts = await response.json();
+            const select = document.getElementById('fromAccount');
+            select.innerHTML = '<option value="">Select account...</option>';
+            accounts.forEach(account => {
+                if (account.active && parseFloat(account.balance) > 0) {
+                    select.innerHTML += `<option value="${account.accountNumber}">${account.accountNumber} - ${account.balance} ${account.currency}</option>`;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
 
-  document.getElementById('transferForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fromAccount = document.getElementById('fromAccount').value;
-      const toAccountNumber = document.getElementById('toAccountNumber').value;
-      const amount = parseFloat(document.getElementById('amount').value);
-      const description = document.getElementById('description').value;
+document.getElementById('transferForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+    const fromAccount = document.getElementById('fromAccount').value;
+    const toAccountNumber = document.getElementById('toAccountNumber').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const description = document.getElementById('description').value;
 
-      if (!fromAccount || !toAccountNumber || !amount) {
-          alert('Заполните все поля');
-          return;
-      }
+    if (!fromAccount || !toAccountNumber || !amount) {
+        alert('Fill in all fields');
+        return;
+    }
 
-      try {
-          const response = await fetch('/api/accounts/transfer', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fromAccountNumber: fromAccount, toAccountNumber, amount, description })
-          });
-          if (response.ok) {
-              alert('Перевод выполнен!');
-              window.location.href = '/dashboard';
-          } else {
-              alert('Ошибка перевода');
-          }
-      } catch (error) {
-          alert('Ошибка соединения');
-      }
-  });
+    try {
+        const response = await fetch('/api/accounts/transfer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ fromAccountNumber: fromAccount, toAccountNumber, amount, description })
+        });
+        if (response.ok) {
+            alert('Transfer completed!');
+            window.location.href = '/dashboard';
+        } else if (response.status === 401) {
+            localStorage.removeItem('jwtToken');
+            window.location.href = '/login';
+        } else {
+            alert('Transfer error');
+        }
+    } catch (error) {
+        alert('Connection error');
+    }
+});
 
   loadAccounts();
 </script>
