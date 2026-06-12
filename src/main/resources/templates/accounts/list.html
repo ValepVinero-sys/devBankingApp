@@ -106,7 +106,7 @@ Functions: View accounts, open a new account (modal window)
   async function loadAccounts() {
       const token = getToken();
 
-      // Если нет токена — редирект на логин
+      // If there is no token — then redirect to login page
       if (!token) {
           window.location.href = '/login';
           return;
@@ -202,7 +202,7 @@ Functions: View accounts, open a new account (modal window)
       }
   }
 
-  // Загружаем счета при загрузке страницы
+  // Load account while page loading
   loadAccounts();
 </script>
 </body>
