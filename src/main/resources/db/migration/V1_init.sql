@@ -1,3 +1,4 @@
+--Table for User's
 CREATE TABLE IF NOT EXISTS users (
                                      id BIGSERIAL PRIMARY KEY,
                                      email VARCHAR(255) NOT NULL UNIQUE,
@@ -6,29 +7,33 @@ CREATE TABLE IF NOT EXISTS users (
                                      last_name VARCHAR(100),
                                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+--Table for accounts
 CREATE TABLE IF NOT EXISTS accounts (
                                         id BIGSERIAL PRIMARY KEY,
                                         account_number VARCHAR(20) NOT NULL UNIQUE,
                                         user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                                        balance DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+                                        balance DECIMAL(15,2) NOT NULL DEFAULT 0.00 CHECK (balance >= 0),
+                                                -- PROTECTION FROM NEGATIVE BALANCE ON DB LVL
                                         currency VARCHAR(3) DEFAULT 'RUB',
                                         type VARCHAR(20) DEFAULT 'CHECKING',
                                         active BOOLEAN DEFAULT TRUE,
                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+--Table for transactions
 CREATE TABLE IF NOT EXISTS transactions (
                                             id BIGSERIAL PRIMARY KEY,
-                                            transaction_id VARCHAR(36) UNIQUE,
+                                            transaction_id VARCHAR(36) UNIQUE, -- UUID for external systems
                                             from_account_id BIGINT REFERENCES accounts(id),
                                             to_account_id BIGINT REFERENCES accounts(id),
                                             amount DECIMAL(15,2) NOT NULL,
-                                            type VARCHAR(20) NOT NULL,
+                                            type VARCHAR(20) NOT NULL, -- TRANSFER, DEPOSIT, WITHDRAWAL
                                             status VARCHAR(20) DEFAULT 'PENDING',
                                             description TEXT,
                                             fee DECIMAL(15,2),
                                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                                             completed_at TIMESTAMP
 );
+--Index for faster request
 CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_from_account ON transactions(from_account_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_to_account ON transactions(to_account_id);
